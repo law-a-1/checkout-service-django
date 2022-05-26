@@ -127,35 +127,20 @@ class CheckoutViewSet(APIView):
     def post(self, request):
         token = request.headers['Authorization']
         
-        # r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token})
+        r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
 
-        # username = r["username"]
-        username = "sae"
+        username = r["username"]
+        # username = "sae"
 
         try:
             cart = Cart.objects.get(username=username)
         except:
             cart = Cart.objects.create(username=username)
 
-        items = Item.objects.filter(cart=cart)
-        
+        cart.grand_total = 0
+        cart.save()
 
-        return {"message": "Success"}
+        items = Item.objects.filter(cart=cart).delete()
+                
 
-
-
-class ItemViewSet(APIView):
-    """
-    API endpoint that allows Items to be viewed or edited.
-    """
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class ProductViewSet(APIView):
-    """
-    API endpoint that allows Products to be viewed or edited.
-    """
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        return Response({"message": "Checkout success"})
