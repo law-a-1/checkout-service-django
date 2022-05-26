@@ -7,6 +7,7 @@ class Cart(models.Model):
     grand_total = models.IntegerField(default=0)
 
 class Product(models.Model):
+    product_id = models.IntegerField(max_length=255, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     price = models.IntegerField()

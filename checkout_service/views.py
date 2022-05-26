@@ -10,7 +10,6 @@ from rest_framework.response import Response
 
 class CartViewSet(APIView):
 
-
     def get(self, request):
         token = request.headers['Authorization']
         
@@ -29,11 +28,15 @@ class CartViewSet(APIView):
         return Response(serializer_cart.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        token = request.headers['Authorization']
-        
-        r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
-
-        username = r["username"]
+        try:
+            token = request.headers['Authorization']
+            r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
+            username = r["username"]
+        except:
+            return Response({
+                "error": "UNAUTHORIZED",
+                "error_message": "You are not authorized"
+            }, status=status.HTTP_404_NOT_FOUND)
         # username = "sae"
 
         try:
@@ -57,6 +60,7 @@ class CartViewSet(APIView):
         return Response(cart_serializer.data)
 
     def put(self, request):
+        print("UPDATING DATA")
         token = request.headers['Authorization']
         
         r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
@@ -70,7 +74,7 @@ class CartViewSet(APIView):
             cart = Cart.objects.create(username=username)
 
         try:
-            product = Product.objects.get(id=request.data["product_id"])
+            product = Product.objects.get(product_id=request.data["product_id"])
             item = Item.objects.get(cart=cart, product=product)
             if request.data["is_add"]:
                 item.amount += 1
@@ -82,7 +86,7 @@ class CartViewSet(APIView):
                 cart.save()
 
                 if item.amount == 0:
-                    item.delete()
+                    product.delete()
                     return Response({"message": "Product updated!"})
 
             item.total_price = item.amount * product.price
@@ -105,14 +109,21 @@ class CartViewSet(APIView):
         username = r["username"]
         # username = "sae"
 
+        print(request.data['product_id'])
+
         try:
             cart = Cart.objects.get(username=username)
         except:
             cart = Cart.objects.create(username=username)
 
         try:
-            product = Product.objects.get(id=request.data['product_id'])
+            product = Product.objects.get(product_id=request.data['product_id'])
+            print("PRODUCT DAN ITEM DAPET")
+            item = Item.objects.get(product=product, cart=cart)
+            cart.grand_total -= item.total_price
+            cart.save()
             product.delete()
+            print("PRODUCT DELETED")
             return Response({"message": "Product deleted!"})
         except:
             return Response({
@@ -132,15 +143,25 @@ class CheckoutViewSet(APIView):
         username = r["username"]
         # username = "sae"
 
+
         try:
             cart = Cart.objects.get(username=username)
         except:
             cart = Cart.objects.create(username=username)
 
-        cart.grand_total = 0
-        cart.save()
+        items = Item.objects.filter(cart=cart)
 
-        items = Item.objects.filter(cart=cart).delete()
-                
+        for item in items:
+            print("CHECKOUT PRODUCTS:")
+            print(item.product.product_id)
+            # decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
+
+            # if decrement_stock.status_code == 200:
+            if True:
+                cart.grand_total -= item.total_price
+                cart.save()
+                item.product.delete()
+            else:
+                pass
 
         return Response({"message": "Checkout success"})
