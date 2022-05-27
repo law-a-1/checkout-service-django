@@ -151,17 +151,23 @@ class CheckoutViewSet(APIView):
 
         items = Item.objects.filter(cart=cart)
 
-        for item in items:
-            print("CHECKOUT PRODUCTS:")
-            print(item.product.product_id)
+        # create_order = requests.post('https://URL_order/', headers={"Authorization": token}).json()
+
+
+        # for item in items:
+        #     print("CHECKOUT PRODUCTS:")
+        #     print(item.product.product_id)
+
+
+
             # decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
 
             # if decrement_stock.status_code == 200:
-            if True:
-                cart.grand_total -= item.total_price
-                cart.save()
-                item.product.delete()
-            else:
-                pass
+            # if True:
+            #     cart.grand_total -= item.total_price
+            #     cart.save()
+            #     item.product.delete()
+            # else:
+            #     pass
 
         return Response({"message": "Checkout success"})
