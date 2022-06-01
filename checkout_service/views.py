@@ -1,6 +1,8 @@
+import json
 from django.shortcuts import render
 import requests
 from .models import Cart, Item, Product
+from .producer import publish
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework import status
@@ -130,10 +132,7 @@ class CartViewSet(APIView):
                 "error": "NOT FOUND",
                 "error_message": "Product with requested ID not found"
             }, status=status.HTTP_404_NOT_FOUND)
-            
-
-
-
+                
 class CheckoutViewSet(APIView):
     def post(self, request):
         token = request.headers['Authorization']
@@ -141,9 +140,6 @@ class CheckoutViewSet(APIView):
         r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
 
         username = r["username"]
-        # username = "sae"
-
-
         try:
             cart = Cart.objects.get(username=username)
         except:
@@ -151,9 +147,15 @@ class CheckoutViewSet(APIView):
 
         items = Item.objects.filter(cart=cart)
 
-        # create_order = requests.post('https://URL_order/', headers={"Authorization": token}).json()
+        data = {
+            "username": username,
+            "grand_total": cart.grand_total
+        }
+        message = json.dumps(data)
+        publish(message)
 
-
+        # create_order = requests.post('http://localhost:8000/orderservice/create/', headers={"Authorization": token}, json=data).json()
+        # print(create_order)
         # for item in items:
         #     print("CHECKOUT PRODUCTS:")
         #     print(item.product.product_id)
