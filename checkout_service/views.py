@@ -196,6 +196,7 @@ class CheckoutViewSet(APIView):
         items = Item.objects.filter(cart=cart)
 
 
+        temp_price = 0
         for item in items:
             print("CHECKOUT PRODUCTS:")
             print(item.product.product_id)
@@ -207,6 +208,7 @@ class CheckoutViewSet(APIView):
             if decrement_stock.status_code == 200:
             # if True:
                 cart.grand_total -= item.total_price
+                temp_price += item.total_price
                 cart.save()
                 item.product.delete()
             else:
@@ -214,9 +216,11 @@ class CheckoutViewSet(APIView):
             
         data = {
             "username": username,
-            "grand_total": cart.grand_total 
+            "grand_total": temp_price
         }
-        requests.post('https://34.136.2.52:4915/orderservice/create-order/', headers={"Authorization": token}, json=data).json()
+        print("ORDER BELOW:\n")
+        order = requests.post('http://34.136.2.52:4915/orderservice/create-order/', headers={"Authorization": token}, json=data).json()
+        print(order)
         logging = {
             "type": "OK",
             "service" : "checkout",
