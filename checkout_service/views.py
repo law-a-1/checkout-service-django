@@ -32,7 +32,14 @@ class CartViewSet(APIView):
             token = request.headers['Authorization']
             r = requests.get('https://auth-law-a1.herokuapp.com/user', headers={"Authorization": token}).json()
             username = r["username"]
-        except:
+        except Exception as e:
+            logging = {
+            "type": "ERROR",
+            "service" : "checkout",
+            "message": "404 - An Error occured. Error details: "+e
+            }
+            requests.post('http://35.225.170.45:2323/logs', json=logging) 
+
             return Response({
                 "error": "UNAUTHORIZED",
                 "error_message": "You are not authorized"
@@ -57,6 +64,12 @@ class CartViewSet(APIView):
 
         # item_serializer = ItemSerializer(instance=item)
         cart_serializer = CartSerializer(instance=cart)
+        logging = {
+            "type": "OK",
+            "service" : "checkout",
+            "message": "200 - Cart retrieved"
+        }
+        requests.post('http://35.225.170.45:2323/logs', json=logging)
         return Response(cart_serializer.data)
 
     def put(self, request):
@@ -87,13 +100,31 @@ class CartViewSet(APIView):
 
                 if item.amount == 0:
                     product.delete()
+                    logging = {
+                    "type": "OK",
+                    "service" : "checkout",
+                    "message": "200 - Product updated"
+                    }
+                    requests.post('http://35.225.170.45:2323/logs', json=logging)
                     return Response({"message": "Product updated!"})
 
             item.total_price = item.amount * product.price
             item.save()
+            logging = {
+                "type": "OK",
+                "service" : "checkout",
+                "message": "200 - Product update"
+            }
+            requests.post('http://35.225.170.45:2323/logs', json=logging)
 
             return Response({"message": "Product updated!"})
         except:
+            logging = {
+                "type": "ERROR",
+                "service" : "checkout",
+                "message": "404 - Product with requested ID not found"
+            }
+            requests.post('http://35.225.170.45:2323/logs', json=logging)
             return Response({
                 "error": "NOT FOUND",
                 "error_message": "Product with requested ID not found"
@@ -124,8 +155,21 @@ class CartViewSet(APIView):
             cart.save()
             product.delete()
             print("PRODUCT DELETED")
+            logging = {
+                "type": "OK",
+                "service" : "checkout",
+                "message": "200 - Product deleted"
+            }
+            requests.post('http://35.225.170.45:2323/logs', json=logging)
             return Response({"message": "Product deleted!"})
         except:
+            logging = {
+                "type": "ERROR",
+                "service" : "checkout",
+                "message": "404 - Product with requested ID not found"
+            }
+            requests.post('http://35.225.170.45:2323/logs', json=logging)
+
             return Response({
                 "error": "NOT FOUND",
                 "error_message": "Product with requested ID not found"
@@ -151,23 +195,33 @@ class CheckoutViewSet(APIView):
 
         items = Item.objects.filter(cart=cart)
 
-        # create_order = requests.post('https://URL_order/', headers={"Authorization": token}).json()
+
+        for item in items:
+            print("CHECKOUT PRODUCTS:")
+            print(item.product.product_id)
 
 
-        # for item in items:
-        #     print("CHECKOUT PRODUCTS:")
-        #     print(item.product.product_id)
+            #TODO: Fix URL nya
+            decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
 
-
-
-            # decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
-
-            # if decrement_stock.status_code == 200:
+            if decrement_stock.status_code == 200:
             # if True:
-            #     cart.grand_total -= item.total_price
-            #     cart.save()
-            #     item.product.delete()
-            # else:
-            #     pass
+                cart.grand_total -= item.total_price
+                cart.save()
+                item.product.delete()
+            else:
+                pass
+            
+        data = {
+            "username": username,
+            "grand_total": cart.grand_total 
+        }
+        requests.post('https://34.136.2.52:4915/orderservice/create-order/', headers={"Authorization": token}, json=data).json()
+        logging = {
+            "type": "OK",
+            "service" : "checkout",
+            "message": "200 - Checkout success"
+        }
+        requests.post('http://35.225.170.45:2323/logs', json=logging)
 
         return Response({"message": "Checkout success"})
