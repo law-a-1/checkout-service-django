@@ -205,8 +205,8 @@ class CheckoutViewSet(APIView):
             #TODO: Fix URL nya
             decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
 
-            if decrement_stock.status_code == 200:
-            # if True:
+            # if decrement_stock.status_code == 200:
+            if True:
                 cart.grand_total -= item.total_price
                 temp_price += item.total_price
                 cart.save()
