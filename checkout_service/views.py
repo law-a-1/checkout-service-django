@@ -25,6 +25,14 @@ class CartViewSet(APIView):
             cart = Cart.objects.create(username=username)
 
         serializer_cart = CartSerializer(instance=cart)
+
+        logging = {
+            "type": "INFO",
+            "service" : "checkout",
+            "message": "200 - Cart retrieved"
+        }
+        requests.post('http://35.225.170.45:2323/logs', json=logging)
+
         return Response(serializer_cart.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -65,7 +73,7 @@ class CartViewSet(APIView):
         # item_serializer = ItemSerializer(instance=item)
         cart_serializer = CartSerializer(instance=cart)
         logging = {
-            "type": "OK",
+            "type": "INFO",
             "service" : "checkout",
             "message": "200 - Cart retrieved"
         }
@@ -101,7 +109,7 @@ class CartViewSet(APIView):
                 if item.amount == 0:
                     product.delete()
                     logging = {
-                    "type": "OK",
+                    "type": "INFO",
                     "service" : "checkout",
                     "message": "200 - Product updated"
                     }
@@ -111,7 +119,7 @@ class CartViewSet(APIView):
             item.total_price = item.amount * product.price
             item.save()
             logging = {
-                "type": "OK",
+                "type": "INFO",
                 "service" : "checkout",
                 "message": "200 - Product update"
             }
@@ -156,7 +164,7 @@ class CartViewSet(APIView):
             product.delete()
             print("PRODUCT DELETED")
             logging = {
-                "type": "OK",
+                "type": "INFO",
                 "service" : "checkout",
                 "message": "200 - Product deleted"
             }
@@ -203,7 +211,7 @@ class CheckoutViewSet(APIView):
 
 
             #TODO: Fix URL nya
-            decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
+            # decrement_stock = request.post(f"http://URL/products/{item.product.product_id}/decrement-stock", data={"amount": item.amount})
 
             # if decrement_stock.status_code == 200:
             if True:
@@ -222,7 +230,7 @@ class CheckoutViewSet(APIView):
         order = requests.post('http://34.136.2.52:4915/orderservice/create-order/', headers={"Authorization": token}, json=data).json()
         print(order)
         logging = {
-            "type": "OK",
+            "type": "INFO",
             "service" : "checkout",
             "message": "200 - Checkout success"
         }
